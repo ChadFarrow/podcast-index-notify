@@ -1,10 +1,14 @@
 // OPTIONAL. add/byfeedurl, for callers that HAVE a Podcast Index key with the
 // WRITE permission. Nothing in this library calls it unless you ask.
 //
-// You do not need it to get a new feed into Podcast Index: a keyless pubnotify
-// does that (it can take up to about 15 minutes). A read-only key gets HTTP 401
-// here. add/byfeedurl only queues the URL; Podcast Index makes the record after
-// its crawler reads the feed, so a new feed often comes back with no id yet.
+// It asks Podcast Index to add a brand-new feed on purpose. The other way is the
+// form at https://podcastindex.org/add. A keyless pubnotify may get a new feed
+// added, but PI does not promise it (see pubnotify.ts).
+//
+// A read-only key gets HTTP 401 with an empty body here, by GET and by POST, even
+// for a feed that is already in the index (tested 2026-11-23). The success answer
+// was not tested live: no write key was at hand. A new feed may come back with no
+// id yet; then poll with lookup().
 //
 // Do not call it for a feed with <itunes:block>yes or <podcast:block>yes: that
 // feed asks not to be listed. notifyNewOrChangedFeed skips it for such a feed.
@@ -72,7 +76,7 @@ export async function addByFeedUrl(feedUrl: string, writeCredentials: PodcastInd
       : {
           error:
             response.status === 401
-              ? 'Podcast Index refused the key (HTTP 401): add/byfeedurl needs a key with the write permission'
+              ? 'Podcast Index refused the key (HTTP 401): add/byfeedurl needs a key with the write permission. Without one, add the feed by hand at https://podcastindex.org/add'
               : (description ?? `Podcast Index answered HTTP ${response.status}`),
         }),
   };

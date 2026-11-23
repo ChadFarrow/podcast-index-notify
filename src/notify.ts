@@ -46,7 +46,9 @@ export interface NotifyOptions extends RequestOptions {
   /**
    * OPTIONAL, and only for a key with the WRITE permission: also call
    * add/byfeedurl. Turns on `checkFeed`, so a blocked feed is never registered.
-   * You do not need it: the pubnotify alone gets a new feed into the index.
+   * The pubnotify alone may get a brand-new feed added, but Podcast Index does
+   * not promise it. This call (or the form at https://podcastindex.org/add) asks
+   * for the add on purpose. A read-only key gets HTTP 401 here.
    */
   register?: PodcastIndexCredentials;
   /** Skip a URL this throttle has seen within its window (see createThrottle). */
@@ -54,7 +56,10 @@ export interface NotifyOptions extends RequestOptions {
 }
 
 export interface NotifyResult {
-  /** True when the first pubnotify succeeded. */
+  /**
+   * True when the first pubnotify succeeded: Podcast Index accepted the ping.
+   * It does not mean that the feed is in the index.
+   */
   ok: boolean;
   /** The normalized feed URL that was sent. */
   url?: string;

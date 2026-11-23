@@ -16,14 +16,24 @@ MSP-2.0 code (`api/_utils/feedUtils.ts`, `api/pubnotify.ts`, `api/_utils/urlVali
 ## Rules
 
 - **pubnotify is keyless.** `src/pubnotify.ts` sends a `User-Agent` and nothing else. Never add
-  `X-Auth-*` or `Authorization` there (the Boost Me Bitch bug, boostmebitch#666). A test checks
-  the headers on the wire.
-- **`add/byfeedurl` is optional.** It needs a WRITE key. Only `addByFeedUrl` and
+  `X-Auth-*` or `Authorization` there: Podcast Index documents it as keyless, and a key there
+  gains nothing (boostmebitch#666 sent one). A test checks the headers on the wire.
+- **Never promise that a pubnotify adds a new feed.** Tests on 2026-11-23: for a feed already
+  in PI, a keyless pubnotify works for every medium. For a URL PI does not hold, it still
+  answers 200 "Feed marked for immediate update.". One brand-new feed was in PI 71 s after
+  pubnotify + podping; two others were not, after pubnotify and podping, and got in only by
+  the hand form https://podcastindex.org/add. The cause is not known. The README, the JSDoc
+  and the package description must not say more than this. Public text stays general: no
+  app names, no feed URLs.
+- **`add/byfeedurl` is optional.** It needs a WRITE key: a read key gets 401 with an empty
+  body, by GET and POST, even for a feed already in PI (2026-11-23; Chad asked PI for write
+  access). Its success answer is not tested live. Only `addByFeedUrl` and
   `notifyNewOrChangedFeed({ register })` call it; nothing calls it by default.
 - **A blocked feed is pinged, never registered** (`<itunes:block>yes`, `<podcast:block>yes`,
   `<podcast:block id="podcastindex">yes`), as in MSP-2.0.
-- **"Not in the index yet" is never a failure.** A new feed can take up to about 15 minutes
-  (Chad, 2026-11-23). `waitUntilIndexed` waits 15 minutes by default.
+- **"Not in the index yet" is never a failure.** When PI adds a new feed, that can take up to
+  about 15 minutes (Chad, 2026-11-23). `waitUntilIndexed` waits 15 minutes by default. After a
+  timeout, the fallback is a write key or the hand form.
 - **Keys and tokens:** the caller passes them. The library reads no environment variable,
   logs nothing, and never puts a key or a token in a URL, a result or an error. Keyed requests
   use `redirect: 'manual'`, the podping `redirect: 'error'`. `test/secrets.test.ts` sweeps for
