@@ -97,6 +97,15 @@ test('addByFeedUrl explains a 401 (no write permission) and a "false" status, ne
   assert.match(r.error!, /write permission/);
   assert.ok(!JSON.stringify(r).includes(CREDS.key));
 
+  // What Podcast Index sent a read-only key on 2026-11-23: 401 with an empty body.
+  r = await addByFeedUrl(FEED, CREDS, { fetch: fakeFetch(() => new Response('', { status: 401 })).fetch });
+  assert.equal(r.ok, false);
+  assert.equal(r.httpStatus, 401);
+  assert.equal(r.description, undefined);
+  assert.match(r.error!, /write permission/);
+  assert.match(r.error!, /https:\/\/podcastindex\.org\/add/);
+  assert.ok(!JSON.stringify(r).includes(CREDS.key));
+
   r = await addByFeedUrl(FEED, CREDS, { fetch: fakeFetch(() => json({ status: 'false', description: 'Feed url is invalid.' })).fetch });
   assert.deepEqual(r, { ok: false, httpStatus: 200, description: 'Feed url is invalid.', error: 'Feed url is invalid.' });
 

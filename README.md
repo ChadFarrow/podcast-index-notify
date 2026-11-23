@@ -2,9 +2,13 @@
 
 Tell [Podcast Index](https://podcastindex.org) about a new or changed podcast feed.
 
-- **No write key needed.** A keyless `hub/pubnotify` is how a new feed gets into the index.
-- Optional podping through a pusher you run, a lookup of the feed's Podcast Index id, and a
-  wait that polls until the feed shows up.
+- **A feed that is already in the index: no key needed.** A keyless `hub/pubnotify` makes
+  Podcast Index read the changed feed again now, for every medium.
+- **A brand-new feed: Podcast Index may add it, but it does not promise to.** Read
+  [What a keyless pubnotify can and cannot do](#what-a-keyless-pubnotify-can-and-cannot-do).
+- Optional podping through a pusher you run, a lookup of the feed's Podcast Index id, a
+  wait that polls until the feed is in the index (or the time is up), and `add/byfeedurl`
+  for a key with the write permission.
 - TypeScript, zero runtime dependencies. Uses the global `fetch` and web APIs only, so it
   runs on Node 18+ and on edge runtimes such as Vercel Edge. ESM only: `import`, not
   `require` (Node 22.12+ can also `require` it).
@@ -18,18 +22,40 @@ Studio), which sends this keyless pubnotify after each feed save.
 npm install podcast-index-notify
 ```
 
-## The two things to know
+## What a keyless pubnotify can and cannot do
 
-**A new feed can take up to about 15 minutes to appear.** The pubnotify only asks Podcast
-Index to read the feed. Podcast Index makes the record after its crawler has read it. Until
-then a lookup finds nothing. That is normal: do not show it as a failure. `waitUntilIndexed`
-polls for up to 15 minutes by default.
+**A feed that Podcast Index already holds: it works.** A keyless `hub/pubnotify` tells
+Podcast Index that the feed changed, and Podcast Index reads it again. This works for every
+medium. `hub/pubnotify` needs no key at all
+(Podcast Index: "No API key needed for this endpoint"). This library sends it with a
+`User-Agent` and nothing else. Do not add key headers to it.
 
-**You do not need a write key.** `hub/pubnotify` needs no key at all (Podcast Index: "No API
-key needed for this endpoint"). This library sends it with a `User-Agent` and nothing else.
-Do not add key headers to it. `add/byfeedurl` is the call that needs a key with the **write**
-permission. It is here as `addByFeedUrl` for the few apps that have such a key, and nothing
-calls it unless you ask. A normal read-only key gets HTTP 401 from it.
+**A brand-new feed: Podcast Index may add it, but it does not promise to.** Podcast Index
+answers HTTP 200 `{"status":"true","description":"Feed marked for immediate update."}` also
+for a URL that it does not hold. That answer does not mean that the feed is in the index, or
+that it will be. In tests on 2026-11-23:
+
+- One new feed got two pubnotifies and a podping, and was in the index about 70 seconds
+  later.
+- Two other new feeds got pubnotifies, podpings or both. Feed readers fetched one of them
+  with HTTP 200 after each notification. One was still not in the index more than 30
+  minutes after its first pubnotify, the other 20 minutes after its first podping. Both got
+  in only through the form below.
+
+Why Podcast Index added one and not the others is not known. So send the pubnotify (and a
+podping, if you run a pusher), then check with `lookup` or `waitUntilIndexed`.
+
+**To add a brand-new feed on purpose, use one of these:**
+
+- `addByFeedUrl`, with a key that has the **write** permission. A normal read-only key gets
+  HTTP 401 with an empty body from `add/byfeedurl`, by GET and by POST, even for a feed that
+  is already in the index. Nothing in this library calls it unless you ask.
+- The form at <https://podcastindex.org/add>, by hand.
+
+**"Not in the index yet" is not a failure.** When Podcast Index adds a new feed, that can
+take up to about 15 minutes, and a lookup finds nothing until then. `waitUntilIndexed` polls
+for 15 minutes by default. After a timeout the feed may still come, or it may need the form
+or a write key.
 
 You need a normal (read) key only to look a feed up (`lookup`, `waitUntilIndexed`). Get one
 free at <https://api.podcastindex.org>.
@@ -46,7 +72,8 @@ const result = await notifyNewOrChangedFeed('https://example.com/feed.xml', {
 //   pubnotify: { ok: true, httpStatus: 200, description: 'Feed marked for immediate update.' } }
 ```
 
-With no options it sends ONE keyless pubnotify and nothing else.
+With no options it sends ONE keyless pubnotify and nothing else. `ok: true` means that
+Podcast Index accepted the ping. It does not mean that the feed is in the index.
 
 ## Next.js on Vercel
 
@@ -109,7 +136,7 @@ const found = await waitUntilIndexed(
 );
 
 if (found.status === 'indexed') console.log(`https://podcastindex.org/podcast/${found.id}`);
-else if (found.status === 'timeout') console.log('Not in the index yet. Check again later.');
+else if (found.status === 'timeout') console.log('Not in the index yet. Check again later, or add it at https://podcastindex.org/add');
 else if (found.status === 'error') console.error(found.error); // the read key was refused
 ```
 
@@ -124,7 +151,8 @@ other call returns a result object.
 
 `feed` is a URL string, `{ url }`, or `{ id }` (a Podcast Index feed id). Sends
 `GET hub/pubnotify` with a `User-Agent` only. Returns
-`{ ok, httpStatus?, description?, error? }`.
+`{ ok, httpStatus?, description?, error? }`. Podcast Index answers 200 (`ok: true`) also for a
+URL that it does not hold, so `ok` is not proof that the feed is or will be in the index.
 
 Use `{ id }` for a feed Podcast Index already holds when your URL may differ from the one it
 stores: a URL it does not know can be added as a second feed.
@@ -144,7 +172,8 @@ The usual call after a save. In order:
 
 Other options: `throttle` (from `createThrottle`). Returns
 `{ ok, url, error?, skipped?, feedCheck?, blocked?, pubnotify?, add?, secondPubnotify?, podping? }`.
-`ok` is the first pubnotify's result.
+`ok` is the first pubnotify's result: Podcast Index accepted the ping. It does not mean that
+the feed is in the index.
 
 A feed with `<itunes:block>yes</itunes:block>`, `<podcast:block>yes</podcast:block>` or
 `<podcast:block id="podcastindex">yes</podcast:block>` is **pinged but never registered**. The
@@ -179,7 +208,9 @@ Options: `timeoutMs`, `initialDelayMs`, `maxDelayMs`, `backoffFactor`, `onAttemp
 Never treats "not yet" as a failure. Returns one of:
 
 - `{ status: 'indexed', id, attempts, elapsedMs }`
-- `{ status: 'timeout', attempts, elapsedMs, lastError? }`: not in the index yet. It may still come.
+- `{ status: 'timeout', attempts, elapsedMs, lastError? }`: not in the index yet. It may still
+  come. A brand-new feed may need `addByFeedUrl` (a write key) or the form at
+  <https://podcastindex.org/add>.
 - `{ status: 'aborted', attempts, elapsedMs }`
 - `{ status: 'error', error, httpStatus?, attempts, elapsedMs }`: the key was refused.
 
@@ -188,8 +219,11 @@ Network errors and 5xx answers count as "not yet".
 ### `addByFeedUrl(feedUrl, writeKey, options?)`: optional
 
 Only for a key with the **write** permission. `POST add/byfeedurl`. Returns
-`{ ok, feedId?, existed?, httpStatus?, description?, error? }`. A new feed often comes back
-with no `feedId`: Podcast Index queues it and makes the record after the crawl.
+`{ ok, feedId?, existed?, httpStatus?, description?, error? }`. A read-only key gets HTTP 401
+with an empty body, even for a feed that is already in the index; the result is then
+`ok: false` with an `error` that says so. Without a write key, use the form at
+<https://podcastindex.org/add>. The success answer was not tested live (no write key was at
+hand). A new feed may come back with no `feedId`; then poll with `lookup`.
 
 ### Feed helpers
 
@@ -227,7 +261,8 @@ for a URL you name, and prints Podcast Index's answer:
 npm run live:pubnotify -- https://example.com/feed.xml --yes
 ```
 
-Without `--yes` it only prints what it would send.
+Without `--yes` it only prints what it would send. A 200 answer does not show that Podcast
+Index will add a new feed.
 
 ## License
 

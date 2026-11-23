@@ -1,13 +1,14 @@
-// Wait for Podcast Index to hold a feed. A new feed can take up to about 15
-// minutes after a pubnotify. "Not found yet" is the normal answer for a while:
-// it is never a failure here.
+// Wait for Podcast Index to hold a feed. When PI adds a new feed, that can take
+// up to about 15 minutes after the notification. PI may also not add a brand-new
+// feed at all (see pubnotify.ts). "Not found yet" is the normal answer for a
+// while: it is never a failure here.
 
 import type { PodcastIndexCredentials } from './auth.js';
 import { PodcastIndexError } from './auth.js';
 import { type RequestOptions, errorMessage, sleep as realSleep } from './http.js';
 import { type FeedRef, lookup } from './lookup.js';
 
-/** 15 minutes: how long a new feed can take to appear (Chad, 2026-11-23). */
+/** 15 minutes: the default wait. When Podcast Index adds a new feed, that can take up to about this long. */
 export const DEFAULT_INDEX_WAIT_MS = 15 * 60 * 1000;
 
 export interface WaitOptions extends RequestOptions {
@@ -28,7 +29,11 @@ export interface WaitOptions extends RequestOptions {
 
 export type WaitResult =
   | { status: 'indexed'; id: number; attempts: number; elapsedMs: number }
-  /** Podcast Index does not hold the feed yet. Not a failure: it may still come. */
+  /**
+   * Podcast Index does not hold the feed yet. Not a failure: it may still come.
+   * A brand-new feed may need addByFeedUrl (a WRITE key) or the form at
+   * https://podcastindex.org/add.
+   */
   | { status: 'timeout'; attempts: number; elapsedMs: number; lastError?: string }
   /** The caller's signal stopped the wait. */
   | { status: 'aborted'; attempts: number; elapsedMs: number }

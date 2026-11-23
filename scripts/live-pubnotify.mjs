@@ -43,5 +43,6 @@ const sentAt = new Date();
 const result = await pubnotify(checked.url, { userAgent });
 console.log(`\nSent at:    ${sentAt.toISOString()}`);
 console.log(`Result:     ${JSON.stringify(result)}`);
-console.log('\nA new feed can take up to about 15 minutes to appear in Podcast Index.');
+console.log('\nA 200 answer does not mean that Podcast Index will add a new feed.');
+console.log('If it adds one, that can take up to about 15 minutes. If it does not, use https://podcastindex.org/add');
 process.exit(result.ok ? 0 : 1);
