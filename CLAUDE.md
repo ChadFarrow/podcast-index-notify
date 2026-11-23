@@ -21,8 +21,8 @@ MSP-2.0 code (`api/_utils/feedUtils.ts`, `api/pubnotify.ts`, `api/_utils/urlVali
 - **Never promise that a pubnotify adds a new feed.** Tests on 2026-11-23: for a feed already
   in PI, a keyless pubnotify works for every medium. For a URL PI does not hold, it still
   answers 200 "Feed marked for immediate update.". One brand-new feed was in PI 71 s after
-  pubnotify + podping; two others were not, after pubnotify and podping, and got in only by
-  the hand form https://podcastindex.org/add. The cause is not known. The README, the JSDoc
+  two pubnotifies and a podping; two others were not, after pubnotifies, podpings or both,
+  and got in only by the hand form https://podcastindex.org/add. The cause is not known. The README, the JSDoc
   and the package description must not say more than this. Public text stays general: no
   app names, no feed URLs.
 - **`add/byfeedurl` is optional.** It needs a WRITE key: a read key gets 401 with an empty

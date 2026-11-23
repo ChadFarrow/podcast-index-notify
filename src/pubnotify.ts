@@ -9,8 +9,9 @@
 // it makes PI read the feed again now, for every medium. For a brand-new feed, PI
 // MAY add it, but does not promise to. PI answers 200 "Feed marked for immediate
 // update." also for a URL that it does not hold. In the tests one new feed was in
-// the index about 70 s after pubnotify and podping; two others were not added
-// after pubnotify and podping, and got in only by hand. Why is not known. To add a
+// the index about 70 s after two pubnotifies and a podping; two others were not
+// added after pubnotifies, podpings or both, and got in only by hand. Why is not
+// known. To add a
 // new feed on purpose, use add/byfeedurl with a WRITE key (add.ts) or the form at
 // https://podcastindex.org/add.
 //

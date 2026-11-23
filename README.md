@@ -26,7 +26,7 @@ npm install podcast-index-notify
 
 **A feed that Podcast Index already holds: it works.** A keyless `hub/pubnotify` tells
 Podcast Index that the feed changed, and Podcast Index reads it again. This works for every
-medium (podcast, music, musicL, video and so on). `hub/pubnotify` needs no key at all
+medium. `hub/pubnotify` needs no key at all
 (Podcast Index: "No API key needed for this endpoint"). This library sends it with a
 `User-Agent` and nothing else. Do not add key headers to it.
 
@@ -35,11 +35,12 @@ answers HTTP 200 `{"status":"true","description":"Feed marked for immediate upda
 for a URL that it does not hold. That answer does not mean that the feed is in the index, or
 that it will be. In tests on 2026-11-23:
 
-- One new feed was in the index about 70 seconds after its first pubnotify. It also got a
-  second pubnotify and a podping.
-- Two other new feeds got pubnotifies, podpings or both. Feed readers fetched them with
-  HTTP 200. One was still not in the index more than 30 minutes after its first pubnotify,
-  the other 20 minutes after its first podping. Both got in only through the form below.
+- One new feed got two pubnotifies and a podping, and was in the index about 70 seconds
+  later.
+- Two other new feeds got pubnotifies, podpings or both. Feed readers fetched one of them
+  with HTTP 200 after each notification. One was still not in the index more than 30
+  minutes after its first pubnotify, the other 20 minutes after its first podping. Both got
+  in only through the form below.
 
 Why Podcast Index added one and not the others is not known. So send the pubnotify (and a
 podping, if you run a pusher), then check with `lookup` or `waitUntilIndexed`.
