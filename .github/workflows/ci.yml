@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [18, 20, 22, 24]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build
+      # Unit tests use a fake fetch and a server on 127.0.0.1. No test reaches the internet.
+      - run: npm test
+      - name: Package contents
+        run: npm pack --dry-run
+      - name: The built package imports
+        run: node --input-type=module -e "import('./dist/index.js').then((m) => { for (const n of ['pubnotify','notifyNewOrChangedFeed','lookup','waitUntilIndexed','addByFeedUrl','podping','createThrottle']) if (typeof m[n] !== 'function') throw new Error(n); console.log('exports ok'); })"
