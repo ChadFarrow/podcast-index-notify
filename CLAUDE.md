@@ -44,6 +44,10 @@ MSP-2.0 code (`api/_utils/feedUtils.ts`, `api/pubnotify.ts`, `api/_utils/urlVali
 - **No network in tests.** Unit tests use the fake fetch in `test/helpers.ts`;
   `test/real-fetch.test.ts` uses a server on 127.0.0.1 that it starts and stops.
 - **Version:** change `package.json` and `src/version.ts` together (a test checks them).
+- **User-Agent:** every call sends `options.userAgent` when the caller gives one, else
+  `DEFAULT_USER_AGENT` (`src/http.ts`): `podcast-index-notify/<version> (+https://github.com/ChadFarrow/podcast-index-notify)`.
+  Keep that form, `<name>/<version> (+<link>)`: no email, no browser imitation.
+  `test/user-agent.test.ts` checks it against package.json.
 
 ## Layout
 

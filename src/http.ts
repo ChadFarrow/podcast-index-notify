@@ -9,8 +9,14 @@ import { VERSION } from './version.js';
 /** The Podcast Index API root. */
 export const PI_API_BASE = 'https://api.podcastindex.org/api/1.0';
 
-/** Sent when the caller gives no User-Agent. Podcast Index asks every client to name itself. */
-export const DEFAULT_USER_AGENT = `podcast-index-notify/${VERSION}`;
+/** This package's public home, named in DEFAULT_USER_AGENT. Not exported from index.ts. */
+export const HOMEPAGE_URL = 'https://github.com/ChadFarrow/podcast-index-notify';
+
+/**
+ * Sent when the caller gives no User-Agent. Podcast Index asks every client to name
+ * itself, so an app should pass its own `options.userAgent`: `<AppName>/<version> (+<link>)`.
+ */
+export const DEFAULT_USER_AGENT = `podcast-index-notify/${VERSION} (+${HOMEPAGE_URL})`;
 
 /** How long one request may take, unless the caller says otherwise. */
 export const DEFAULT_TIMEOUT_MS = 10_000;
