@@ -123,7 +123,7 @@ To show the Podcast Index id to the user, poll from the browser (or a background
 import { notifyNewOrChangedFeed, waitUntilIndexed } from 'podcast-index-notify';
 
 const feedUrl = 'https://example.com/feed.xml';
-const userAgent = 'my-feed-tool/1.0';
+const userAgent = 'my-feed-tool/1.0 (+https://my-feed-tool.example)';
 
 const sent = await notifyNewOrChangedFeed(feedUrl, { userAgent, checkFeed: true });
 if (!sent.ok) throw new Error(sent.error);
@@ -143,7 +143,8 @@ else if (found.status === 'error') console.error(found.error); // the read key w
 ## API
 
 Every network call takes these options: `userAgent` (Podcast Index asks each app to name
-itself; default `podcast-index-notify/<version>`), `timeoutMs` (default 10 000), `signal`,
+itself, as `<AppName>/<version> (+<link>)`; default
+`podcast-index-notify/<version> (+https://github.com/ChadFarrow/podcast-index-notify)`), `timeoutMs` (default 10 000), `signal`,
 `fetch` (your own fetch) and `apiBase`. Only `lookup` throws for a network problem; every
 other call returns a result object.
 
